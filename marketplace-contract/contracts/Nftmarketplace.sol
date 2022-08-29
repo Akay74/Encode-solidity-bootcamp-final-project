@@ -29,6 +29,9 @@ contract Nftmarketplace is ERC721URIStorage, Ownable {
 
     constructor(string memory _name, string memory _symbol) payable ERC721("_name", "_symbol") {}
 
+    /**
+    *@dev function should be payable and should have a msg.value
+     */
     function mint(string memory _tokenURI) public {
         uint256 tokenId = _tokenIds.current();
 
@@ -38,6 +41,30 @@ contract Nftmarketplace is ERC721URIStorage, Ownable {
 
         // pass internal list function
         list(tokenId);
+    }
+
+    function exists(uint256 tokenId) public view returns (bool) {
+       return _exists(tokenId);
+    }
+
+    function isRented(uint256 _index) public view returns (bool) {
+        NftDetails storage nft = nftDetail[_index];
+        return nft.isRented;
+    }
+
+    function isForRent(uint256 _index) public view returns (bool) {
+        NftDetails storage nft = nftDetail[_index];
+        return nft.forRent;
+    }
+
+    function isForSale(uint256 _index) public view returns (bool) {
+        NftDetails storage nft = nftDetail[_index];
+        return nft.forSale;
+    }
+
+    function getBuyPrice(uint256 _index) public view returns (uint256) {
+        NftDetails storage nft = nftDetail[_index];
+        return nft.buyPrice;
     }
 
     function list(uint256 _tokenId) private {
