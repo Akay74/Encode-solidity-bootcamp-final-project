@@ -3,11 +3,19 @@
 pragma solidity ^0.8.11;
 
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
+import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
+interface IERC721MintableBurnable is IERC721 {
+    function safeMint(address, uint256) external;
+
+    function burn(uint256) external;
+}
+
 contract Nftmarketplace is ERC721URIStorage, Ownable {
     address contractor = payable(address(this));
+    IERC721MintableBurnable public collection;
     
     using Counters for Counters.Counter; 
     Counters.Counter public _tokenIds;
@@ -27,19 +35,25 @@ contract Nftmarketplace is ERC721URIStorage, Ownable {
 
     mapping(uint256 => NftDetails) public nftDetail;
 
-    constructor(string memory _name, string memory _symbol) payable ERC721("_name", "_symbol") {}
+    /**
+    * @dev create a variable to hold address of NFT collection
+    * pass address of rentItNFT contract to constructor
+    */
+    constructor(address _collection) payable ERC721("_name", "") {
+        collection = IERC721MintableBurnable(_collection);
+    }
 
     /**
-    *@dev function should be payable and should have a msg.value
+    * @dev function should be payable and should have a msg.value
+    * call the mint function from an external contract
      */
     function mint(string memory _tokenURI) public {
         uint256 tokenId = _tokenIds.current();
 
         _tokenIds.increment();
-        _safeMint(msg.sender, tokenId);
+        collection.safeMint(msg.sender, tokenId);
         _setTokenURI(tokenId, _tokenURI);
 
-        // pass internal list function
         list(tokenId);
     }
 
@@ -98,6 +112,10 @@ contract Nftmarketplace is ERC721URIStorage, Ownable {
         nft.expires = currentTime + _duration;
     }
 
+    /**
+    * @dev might use the pull over push solidity pattern to keep track of owner balance
+    * create a withdraw function that let's owners withdraw their tokens
+    */
     function buy(uint256 _index) public payable {
         NftDetails storage nft = nftDetail[_index];
         require(msg.sender != nft.owner, "You can't buy your NFT");
@@ -156,10 +174,8 @@ contract Nftmarketplace is ERC721URIStorage, Ownable {
         nft.isRented = false;
     }
 
-    function withdraw() public onlyOwner {
-        uint amount = address(this).balance;
-        
-        (bool success, ) = msg.sender.call{value: amount}("");
+    function withdraw(uint256 _amount) public onlyOwner {
+        (bool success, ) = msg.sender.call{value: _amount}("");
         require(success, "Failed to withdraw Matic");
     } 
 }

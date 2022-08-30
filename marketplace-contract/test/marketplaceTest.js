@@ -49,16 +49,19 @@ describe('tests', function () {
 
     it('should buy NFT', async () => {
       index = 0;
-      buyPrice = 3000000;
+      buyPrice = 2;
+      console.log(buyPrice);
       const [owner, user] = await ethers.getSigners();
       const Nftmarketplace = await hre.ethers.getContractFactory('Nftmarketplace');
       const nftmarketplace = await Nftmarketplace.deploy("NFT", "NFTtest");
 
       await nftmarketplace.deployed();
-      await nftmarketplace.mint("https://ipfs.io/ipfs/Qmc1iZvCSnEUTuPz6iSEngDWbKTzAagRz4U9JfssFSpynf");
-      await nftmarketplace.setBuyPrice(index, buyPrice);
-      await nftmarketplace.toggleForSale(index);
-
+      const mintTx = await nftmarketplace.mint("https://ipfs.io/ipfs/Qmc1iZvCSnEUTuPz6iSEngDWbKTzAagRz4U9JfssFSpynf");
+      await mintTx.wait();
+      const setBuyPriceTx = await nftmarketplace.setBuyPrice(index, buyPrice);
+      await setBuyPriceTx.wait();
+      const toggleForSaleTx = await nftmarketplace.toggleForSale(index);
+      await toggleForSaleTx.wait();
       const buyTx = await nftmarketplace.connect(user).buy(index);
       await buyTx.wait();
 
